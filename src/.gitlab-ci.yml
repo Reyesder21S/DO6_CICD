@@ -1,0 +1,74 @@
+stages:
+  - build
+  - style
+  - test
+  - deploy
+
+variables:
+  TELEGRAM_BOT_TOKEN: 8392653914:AAHPOS9_f2aEVg_TA8DXcBH6wo3BOr8M7R4
+  TELEGRAM_CHAT_ID: 520882781
+
+Build Job:
+  stage: build
+  tags:
+    - Build
+  script:
+    - cd code-samples
+    - make
+    - |
+      curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+        -d "chat_id=${TELEGRAM_CHAT_ID}" \
+        -d "text=Build Job УСПЕШНО завершен!" \
+        -d "parse_mode=HTML" > /dev/null 2>&1 || echo "Telegram notification skipped"
+  artifacts:
+    paths:
+      - code-samples/DO
+    expire_in: 30 days
+Style Job:
+  stage: style
+  tags:
+    - Style
+  script:
+    - cd code-samples
+    - | 
+      echo "Проверка кодстайла..."
+      clang-format -Werror -n *.c || exit 1
+    - |
+      curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+        -d "chat_id=${TELEGRAM_CHAT_ID}" \
+        -d "text=Style Job УСПЕШНО завершен!" \
+        -d "parse_mode=HTML" > /dev/null 2>&1 || echo "Telegram notification skipped"
+  allow_failure: false
+Test Job:
+  stage: test
+  tags:
+    - Test
+  needs:
+    - Build Job
+    - Style Job
+  before_script:
+    - chmod +x test.sh
+  script:
+    - ./test.sh code-samples/DO
+    - |
+      curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+        -d "chat_id=${TELEGRAM_CHAT_ID}" \
+        -d "text=Test Job УСПЕШНО завершен!" \
+        -d "parse_mode=HTML" > /dev/null 2>&1 || echo "Telegram notification skipped"
+Deploy Job:
+  stage: deploy
+  tags:
+    - Deploy
+  script:
+    - chmod +x deploy.sh
+    - ./deploy.sh
+    - |
+      curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+        -d "chat_id=${TELEGRAM_CHAT_ID}" \
+        -d "text=Deploy Job УСПЕШНО завершен!" \
+        -d "parse_mode=HTML" > /dev/null 2>&1 || echo "Telegram notification skipped"
+  when: manual
+  dependencies:
+    - Build Job
+    - Style Job
+    - Test Job
