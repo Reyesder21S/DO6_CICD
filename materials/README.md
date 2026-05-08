@@ -21,8 +21,6 @@ Development of a simple **CI/CD** for the C project. Building, testing, deployme
 
 ## Chapter I
 
-![basic_ci_cd](misc/images/basic_ci_cd.JPG)
-
 Planet Earth, ASI office, today.
 
 After arriving at the Port of London, you have had a few days to settle in and explore the city, and then comes the day you have to go to your new job.
